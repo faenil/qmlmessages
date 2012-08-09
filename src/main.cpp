@@ -49,6 +49,7 @@
 #include "src/conversationsmodel.h"
 #include "src/conversationchannel.h"
 #include "src/qmlgroupmodel.h"
+#include "src/qmlchatmodel.h"
 
 using namespace Tp;
 

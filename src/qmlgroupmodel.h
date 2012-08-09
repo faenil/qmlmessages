@@ -8,7 +8,8 @@ class QmlGroupModel : public CommHistory::GroupModel
 public:
     enum {
         LastMessageTextRole = Qt::UserRole,
-        LastModifiedRole
+        LastModifiedRole,
+        ConversationRole
     };
 
     QmlGroupModel(QObject *parent = 0);
