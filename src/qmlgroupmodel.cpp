@@ -21,7 +21,13 @@ QVariant QmlGroupModel::data(const QModelIndex &index, int role) const
     int column = index.column();
 
     switch (role) {
-        case Qt::DisplayRole: column = RemoteUids; break;
+        case Qt::DisplayRole: {
+            QList<CommHistory::Event::Contact> contacts = group(index).contacts();
+            if (!contacts.isEmpty())
+                return contacts[0].second;
+            column = RemoteUids;
+            break;
+        }
         case LastMessageTextRole: column = LastMessageText; break;
         case LastModifiedRole: column = LastModified; break;
         case ConversationRole: {
@@ -32,7 +38,8 @@ QVariant QmlGroupModel::data(const QModelIndex &index, int role) const
     }
 
     QVariant re = CommHistory::GroupModel::data(this->index(index.row(), column, index.parent()), Qt::DisplayRole);
-    if (role == Qt::DisplayRole) {
+
+    if (column == RemoteUids) {
         re = re.value<QVariantList>()[0];
     }
     return re;
