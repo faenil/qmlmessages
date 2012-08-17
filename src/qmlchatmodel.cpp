@@ -23,7 +23,7 @@ QVariant QmlChatModel::data(const QModelIndex &index, int role) const
     int column = index.column();
     switch (role) {
         case Qt::DisplayRole: column = FreeText; break;
-        case DirectionRole: column = Direction; break;
+        case DirectionRole: column = CommHistory::ConversationModel::Direction; break;
         case StartTimeRole: column = StartTime; break;
         case StatusRole: column = Status; break;
     }
