@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     qRegisterMetaType<ChatModel*>();
     qmlRegisterType<QmlGroupModel>("org.nemomobile.qmlmessages", 1, 0, "ConversationsModel");
     qmlRegisterType<AccountsModel>("org.nemomobile.qmlmessages", 1, 0, "AccountsModel");
-    qmlRegisterUncreatableType<ChatModel>("org.nemomobile.qmlmessages", 1, 0, "ChatModel", "Cannot be created");
+    qmlRegisterUncreatableType<QmlChatModel>("org.nemomobile.qmlmessages", 1, 0, "ChatModel", "Cannot be created");
     qmlRegisterType<ConversationChannel>("org.nemomobile.qmlmessages", 1, 0, "ConversationChannel");
 
     // Set up view

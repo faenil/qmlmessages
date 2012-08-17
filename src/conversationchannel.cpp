@@ -30,7 +30,7 @@
 
 #include "conversationchannel.h"
 #include "clienthandler.h"
-#include "chatmodel.h"
+#include "qmlchatmodel.h"
 
 #include <TelepathyQt4/ChannelRequest>
 #include <TelepathyQt4/TextChannel>
@@ -38,9 +38,44 @@
 #include <TelepathyQt4/PendingReady>
 #include <TelepathyQt4/Contact>
 
-ConversationChannel::ConversationChannel(QObject *parent)
-    : QObject(parent), mPendingRequest(0), mState(Null), mModel(0)
+QHash<int,ConversationChannel*> ConversationChannel::groupIdMap;
+
+ConversationChannel *ConversationChannel::channelForGroupId(int groupid)
 {
+    ConversationChannel *re = groupIdMap.value(groupid);
+    if (!re) {
+        re = new ConversationChannel;
+        re->setCommGroup(groupid);
+        Q_ASSERT(groupIdMap.value(groupid) == re);
+    }
+    return re;
+}
+
+ConversationChannel::ConversationChannel(QObject *parent)
+    : QObject(parent), mPendingRequest(0), mState(Null), mModel(0), mGroupId(-1)
+{
+}
+
+ConversationChannel::~ConversationChannel()
+{
+    if (mGroupId >= 0) {
+        Q_ASSERT(groupIdMap.value(mGroupId) == this);
+        groupIdMap.remove(mGroupId);
+    }
+}
+
+void ConversationChannel::setCommGroup(int groupid)
+{
+    if (groupid == mGroupId)
+        return;
+
+    Q_ASSERT(mGroupId < 0);
+    mGroupId = groupid;
+    Q_ASSERT(!groupIdMap.contains(groupid));
+    groupIdMap.insert(groupid, this);
+
+    mModel = new QmlChatModel(mGroupId, this);
+    emit chatModelReady(mModel);
 }
 
 void ConversationChannel::start(Tp::PendingChannelRequest *pendingRequest,
@@ -73,6 +108,7 @@ void ConversationChannel::setChannel(const Tp::ChannelPtr &c)
             SIGNAL(finished(Tp::PendingOperation*)),
             SLOT(channelReady()));
 
+#if 0
     if (!mModel) {
         // XXX This is ugly repetition, necessary for incoming chats
         // which don't hit channelRequestCreated (but that can't be
@@ -80,6 +116,7 @@ void ConversationChannel::setChannel(const Tp::ChannelPtr &c)
         mModel = new ChatModel(this);
         emit chatModelReady(mModel);
     }
+#endif
 
     setState(PendingReady);
 }
@@ -101,11 +138,13 @@ void ConversationChannel::channelRequestCreated(const Tp::ChannelRequestPtr &r)
     mPendingRequest = 0;
     setState(Requested);
 
+#if 0
     // XXX is this the best place to create? And object lifetime may be wrong.
     mModel = new ChatModel(this);
     foreach (QString msg, mPendingMessages)
         mModel->messageSending(msg, NULL);
     emit chatModelReady(mModel);
+#endif
 
     ClientHandler::instance()->addChannelRequest(mRequest, this);
 }
@@ -148,8 +187,6 @@ void ConversationChannel::channelReady()
     Q_ASSERT(mModel);
     Tp::TextChannelPtr textChannel = Tp::SharedPtr<Tp::TextChannel>::dynamicCast(mChannel);
     Q_ASSERT(!textChannel.isNull());
-    if (!textChannel.isNull())
-        mModel->setChannel(textChannel);
 
     Tp::ContactPtr contact = mChannel->targetContact();
     if (contact.isNull())
