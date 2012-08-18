@@ -36,6 +36,7 @@
 #include <TelepathyQt4/ChannelRequest>
 #include <TelepathyQt4/Channel>
 #include <TelepathyQt4/PendingSendMessage>
+#include <CommHistory/Group>
 
 class QmlChatModel;
 
@@ -77,14 +78,14 @@ public:
         Error
     };
 
-    static ConversationChannel *channelForGroupId(int groupid);
+    static ConversationChannel *channelForGroup(const CommHistory::Group &group);
     // XXX look at Group::url(), which claims to be the "tracker id" for a group.
     static ConversationChannel *channelForTpChannel(const QString &telepathyId); // XXX needed?
 
     ConversationChannel(QObject *parent = 0);
     virtual ~ConversationChannel();
 
-    void setCommGroup(int groupid);
+    void setCommGroup(const CommHistory::Group &group);
 
     Q_INVOKABLE void start(Tp::PendingChannelRequest *request, const QString &contactId);
     void setChannel(const Tp::ChannelPtr &channel);
@@ -121,7 +122,7 @@ private:
     Tp::ChannelPtr mChannel;
     State mState;
     QmlChatModel *mModel;
-    int mGroupId;
+    CommHistory::Group mGroup;
 
     QString mContactId;
 

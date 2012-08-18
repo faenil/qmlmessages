@@ -52,6 +52,8 @@
 
 using namespace Tp;
 
+Tp::AccountManagerPtr accountManager;
+
 #ifdef HAS_BOOSTER
 Q_DECL_EXPORT
 #endif
@@ -89,6 +91,9 @@ int main(int argc, char **argv)
     ClientHandler *clientHandler = new ClientHandler;
     AbstractClientPtr handler = AbstractClientPtr::dynamicCast(SharedPtr<ClientHandler>(clientHandler));
     registrar->registerClient(handler, "qmlmessages");
+
+    accountManager = Tp::AccountManager::create(Tp::AccountFactory::create(dbus,
+                         Tp::Account::FeatureCore));
 
     // Set up QML
     qRegisterMetaType<ChatModel*>();

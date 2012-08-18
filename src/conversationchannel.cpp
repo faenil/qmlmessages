@@ -37,45 +37,61 @@
 #include <TelepathyQt4/Channel>
 #include <TelepathyQt4/PendingReady>
 #include <TelepathyQt4/Contact>
+#include <TelepathyQt4/Account>
+#include <TelepathyQt4/AccountManager>
 
 QHash<int,ConversationChannel*> ConversationChannel::groupIdMap;
 
-ConversationChannel *ConversationChannel::channelForGroupId(int groupid)
+// XXX
+extern Tp::AccountManagerPtr accountManager;
+
+ConversationChannel *ConversationChannel::channelForGroup(const CommHistory::Group &group)
 {
-    ConversationChannel *re = groupIdMap.value(groupid);
+    Q_ASSERT(group.isValid());
+    ConversationChannel *re = groupIdMap.value(group.id());
     if (!re) {
         re = new ConversationChannel;
-        re->setCommGroup(groupid);
-        Q_ASSERT(groupIdMap.value(groupid) == re);
+        re->setCommGroup(group);
+        Q_ASSERT(groupIdMap.value(group.id()) == re);
     }
     return re;
 }
 
 ConversationChannel::ConversationChannel(QObject *parent)
-    : QObject(parent), mPendingRequest(0), mState(Null), mModel(0), mGroupId(-1)
+    : QObject(parent), mPendingRequest(0), mState(Null), mModel(0)
 {
 }
 
 ConversationChannel::~ConversationChannel()
 {
-    if (mGroupId >= 0) {
-        Q_ASSERT(groupIdMap.value(mGroupId) == this);
-        groupIdMap.remove(mGroupId);
+    if (mGroup.isValid()) {
+        Q_ASSERT(groupIdMap.value(mGroup.id()) == this);
+        groupIdMap.remove(mGroup.id());
     }
+    Q_ASSERT(!groupIdMap.values().contains(this));
 }
 
-void ConversationChannel::setCommGroup(int groupid)
+void ConversationChannel::setCommGroup(const CommHistory::Group &group)
 {
-    if (groupid == mGroupId)
-        return;
+    Q_ASSERT(!mGroup.isValid());
+    mGroup = group;
+    Q_ASSERT(!groupIdMap.contains(group.id()));
+    groupIdMap.insert(group.id(), this);
 
-    Q_ASSERT(mGroupId < 0);
-    mGroupId = groupid;
-    Q_ASSERT(!groupIdMap.contains(groupid));
-    groupIdMap.insert(groupid, this);
 
-    mModel = new QmlChatModel(mGroupId, this);
+    mModel = new QmlChatModel(group.id(), this);
     emit chatModelReady(mModel);
+
+    qDebug() << Q_FUNC_INFO << mGroup.localUid() << mGroup.remoteUids().value(0);
+
+    // XXX wait for account manager if necessary?
+    Tp::AccountPtr account = accountManager->accountForPath(mGroup.localUid());
+    Q_ASSERT(account);
+    Q_ASSERT(account->isReady());
+    Tp::PendingChannelRequest *req = account->ensureTextChat(mGroup.remoteUids().value(0),
+            QDateTime::currentDateTime(),
+            QLatin1String("org.freedesktop.Telepathy.Client.qmlmessages"));
+    start(req, mGroup.remoteUids().value(0));
 }
 
 void ConversationChannel::start(Tp::PendingChannelRequest *pendingRequest,
@@ -128,6 +144,8 @@ void ConversationChannel::channelRequestCreated(const Tp::ChannelRequestPtr &r)
     Q_ASSERT(!r.isNull());
     if (state() != PendingRequest)
         return;
+
+    qDebug() << Q_FUNC_INFO;
 
     mRequest = r;
     connect(mRequest.data(), SIGNAL(succeeded(Tp::ChannelPtr)),
