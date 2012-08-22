@@ -78,7 +78,6 @@ void ConversationChannel::setCommGroup(const CommHistory::Group &group)
     Q_ASSERT(!groupIdMap.contains(group.id()));
     groupIdMap.insert(group.id(), this);
 
-
     mModel = new QmlChatModel(group.id(), this);
     emit chatModelReady(mModel);
 
@@ -124,16 +123,6 @@ void ConversationChannel::setChannel(const Tp::ChannelPtr &c)
             SIGNAL(finished(Tp::PendingOperation*)),
             SLOT(channelReady()));
 
-#if 0
-    if (!mModel) {
-        // XXX This is ugly repetition, necessary for incoming chats
-        // which don't hit channelRequestCreated (but that can't be
-        // moved either, due to ClientHandler::addChannelRequest)
-        mModel = new ChatModel(this);
-        emit chatModelReady(mModel);
-    }
-#endif
-
     setState(PendingReady);
 }
 
@@ -156,14 +145,6 @@ void ConversationChannel::channelRequestCreated(const Tp::ChannelRequestPtr &r)
     mPendingRequest = 0;
     setState(Requested);
 
-#if 0
-    // XXX is this the best place to create? And object lifetime may be wrong.
-    mModel = new ChatModel(this);
-    foreach (QString msg, mPendingMessages)
-        mModel->messageSending(msg, NULL);
-    emit chatModelReady(mModel);
-#endif
-
     ClientHandler::instance()->addChannelRequest(mRequest, this);
 }
 
@@ -178,6 +159,7 @@ void ConversationChannel::channelRequestSucceeded(const Tp::ChannelPtr &channel)
         return;
     }
 
+    qDebug() << Q_FUNC_INFO;
     setChannel(channel);
     mRequest.reset();
     emit requestSucceeded();
@@ -202,7 +184,6 @@ void ConversationChannel::channelReady()
     if (state() != PendingReady || mChannel.isNull())
         return;
 
-    Q_ASSERT(mModel);
     Tp::TextChannelPtr textChannel = Tp::SharedPtr<Tp::TextChannel>::dynamicCast(mChannel);
     Q_ASSERT(!textChannel.isNull());
 
