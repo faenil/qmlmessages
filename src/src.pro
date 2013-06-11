@@ -1,8 +1,8 @@
 PROJECT_NAME = qmlmessages
-QT += dbus declarative svg
+QT += dbus quick qml 
 
 CONFIG += link_pkgconfig
-PKGCONFIG += TelepathyQt4
+PKGCONFIG += TelepathyQt5
 
 target.path = $$INSTALL_ROOT/usr/bin
 INSTALLS += target
@@ -14,7 +14,7 @@ SOURCES += main.cpp \
 HEADERS += windowmanager.h \
     dbusadaptor.h
 
-RESOURCES += ../res/res.qrc ../qml/qml.qrc
+RESOURCES += ../res/res.qrc 
 
 # do not edit below here
 TEMPLATE = app
@@ -23,10 +23,10 @@ TARGET = $$PROJECT_NAME
 
 CONFIG += link_pkgconfig
 
-packagesExist(qdeclarative-boostable) {
-    message("Building with qdeclarative-boostable support")
+packagesExist(qdeclarative5-boostable) {
+    message("Building with qdeclarative5-boostable support")
     DEFINES += HAS_BOOSTER
-    PKGCONFIG += qdeclarative-boostable
+    PKGCONFIG += qdeclarative5-boostable
 } else {
-    warning("qdeclarative-boostable not available; startup times will be slower")
+    warning("qdeclarative5-boostable not available; startup times will be slower")
 }

@@ -30,13 +30,16 @@
 
 #include "windowmanager.h"
 #include "dbusadaptor.h"
-#include <QApplication>
-#include <QDeclarativeEngine>
-#include <QDeclarativeContext>
-#include <QDeclarativeItem>
-#include <QGraphicsView>
-#include <QGraphicsObject>
+#include <QGuiApplication>
+#include <QQuickView>
+#include <QQmlContext>
+#include <QQuickItem>
 #include <QDBusConnection>
+#include <QDebug>
+
+#ifdef HAS_BOOSTER
+#include <MDeclarativeCache>
+#endif
 
 static WindowManager *wmInstance = 0;
 
@@ -48,7 +51,7 @@ WindowManager *WindowManager::instance()
 }
 
 WindowManager::WindowManager(QObject *parent)
-    : QObject(parent), mEngine(0)
+    : QObject(parent), mWindow(0)
 {
     createScene();
 
@@ -61,94 +64,43 @@ WindowManager::WindowManager(QObject *parent)
 
 WindowManager::~WindowManager()
 {
-    delete mWindow.data();
-    delete mEngine;
-    delete mScene;
+    delete mWindow;
 }
 
 void WindowManager::createScene()
 {
-    if (mEngine)
-        return;
-
-    mEngine = new QDeclarativeEngine;
-    mEngine->rootContext()->setContextProperty("windowManager",
-            QVariant::fromValue<QObject*>(this));
-
-    mScene = new QGraphicsScene;
-    // From QDeclarativeView
-    mScene->setItemIndexMethod(QGraphicsScene::NoIndex);
-    mScene->setStickyFocus(true);
-
-    QDeclarativeComponent component(mEngine, QUrl("qrc:qml/main.qml"));
-    if (!component.isReady()) {
-        qWarning() << component.errors();
-    }
-    mRootObject = static_cast<QGraphicsObject*>(component.create());
-    mScene->addItem(mRootObject);
-}
-
-void WindowManager::ensureWindow()
-{
     if (mWindow)
         return;
 
-    createScene();
+#ifdef HAS_BOOSTER
+    mWindow = MDeclarativeCache::qQuickView();
+#else
+    mWindow = new QQuickView;
+#endif
 
-    mWindow = new QGraphicsView;
-
-    QGraphicsView *w = mWindow.data();
-
-    // mWindow is a QWeakPointer, so it'll be cleared on delete
-    w->setAttribute(Qt::WA_DeleteOnClose);
-    w->setWindowTitle(tr("Messages"));
-    w->setAttribute(Qt::WA_OpaquePaintEvent);
-    w->setAttribute(Qt::WA_NoSystemBackground);
-    w->viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
-    w->viewport()->setAttribute(Qt::WA_NoSystemBackground);
-    // From QDeclarativeView
-    w->setFrameStyle(0);
-    w->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    w->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    w->setOptimizationFlags(QGraphicsView::DontSavePainterState);
-    w->setViewportUpdateMode(QGraphicsView::BoundingRectViewportUpdate);
-    w->viewport()->setFocusPolicy(Qt::NoFocus);
-    w->setFocusPolicy(Qt::StrongFocus);
-
-    w->setScene(mScene);
-
-    QDeclarativeItem *i = qobject_cast<QDeclarativeItem*>(mRootObject);
-    w->resize(i->width(), i->height());
-    w->setSceneRect(QRectF(0, 0, i->width(), i->height()));
+    mWindow->rootContext()->setContextProperty("windowManager",
+            QVariant::fromValue<QObject*>(this));
+    mWindow->setSource(QUrl("/usr/share/qmlmessages/main.qml"));
 }
 
 void WindowManager::showGroupsWindow()
 {
-    ensureWindow();
-
-    Q_ASSERT(mRootObject);
-    bool ok = mRootObject->metaObject()->invokeMethod(mRootObject, "showGroupsList");
+    bool ok = mWindow->rootObject()->metaObject()->invokeMethod(mWindow->rootObject(), "showGroupsList");
     if (!ok)
         qWarning() << Q_FUNC_INFO << "showGroupsList call failed";
 
-    mWindow.data()->showFullScreen();
-    mWindow.data()->activateWindow();
-    mWindow.data()->raise();
+    mWindow->showFullScreen();
+    mWindow->requestActivate();
 }
 
 void WindowManager::showConversation(const QString &localUid, const QString &remoteUid, unsigned type)
 {
-    Q_UNUSED(type);
-    ensureWindow();
-
-    Q_ASSERT(mRootObject);
-    bool ok = mRootObject->metaObject()->invokeMethod(mRootObject, "showConversation",
+    bool ok = mWindow->rootObject()->metaObject()->invokeMethod(mWindow->rootObject(), "showConversation",
             Q_ARG(QVariant, localUid), Q_ARG(QVariant, remoteUid));
     if (!ok)
         qWarning() << Q_FUNC_INFO << "showConversation call failed";
 
-    mWindow.data()->showFullScreen();
-    mWindow.data()->activateWindow();
-    mWindow.data()->raise();
+    mWindow->showFullScreen();
+    mWindow->requestActivate();
 }
 

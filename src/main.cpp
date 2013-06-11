@@ -29,10 +29,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <QApplication>
+#include <QGuiApplication>
 #include <QDBusConnection>
 #ifdef HAS_BOOSTER
-#include <applauncherd/MDeclarativeCache>
+#include <MDeclarativeCache>
 #endif
 
 #include <TelepathyQt/Constants>
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     MDeclarativeCache::qApplication(argc, argv);
 #else
     qWarning() << Q_FUNC_INFO << "Warning! Running without booster. This may be a bit slower.";
-    QApplication a(argc, argv);
+    QGuiApplication a(argc, argv);
 #endif
 
     // Set up Telepathy

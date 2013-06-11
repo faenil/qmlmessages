@@ -34,10 +34,7 @@
 #include <QObject>
 #include <QWeakPointer>
 
-class QGraphicsView;
-class QGraphicsScene;
-class QGraphicsObject;
-class QDeclarativeEngine;
+class QQuickView;
 
 /* Right now, WindowManager is just responsible for creating/showing the
  * single window we manage when requested via DBus or application launch.
@@ -59,13 +56,9 @@ public slots:
     void showConversation(const QString &localUid, const QString &remoteUid, unsigned type);
 
 private:
-    QWeakPointer<QGraphicsView> mWindow;
-    QDeclarativeEngine *mEngine;
-    QGraphicsScene *mScene;
-    QGraphicsObject *mRootObject;
+    QQuickView *mWindow;
 
     void createScene();
-    void ensureWindow();
 };
 
 #endif
