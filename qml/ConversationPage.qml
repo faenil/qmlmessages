@@ -32,7 +32,6 @@
 import QtQuick 2.0
 import com.nokia.meego 2.0
 import org.nemomobile.messages.internal 1.0
-import org.nemomobile.qmlcontacts 1.0
 import org.nemomobile.commhistory 1.0
 
 /* ConversationPage has two states, depending on if it has an active
@@ -86,9 +85,9 @@ Page {
             text: person ? person.displayLabel : (group ? group.remoteUids[0] : "")
         }
 
-        ContactAvatarImage {
+        Image {
             id: avatar
-            contact: person
+            //contact: person
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter

@@ -31,7 +31,6 @@
 
 import QtQuick 2.0
 import com.nokia.meego 2.0
-import org.nemomobile.qmlcontacts 1.0
 
 MouseArea {
     id: root
@@ -59,9 +58,9 @@ MouseArea {
         person = peopleModel.personById(model.contactIds[0])
     }
 
-    ContactAvatarImage {
+    Image {
         id: photo
-        contact: person
+        //contact: person
         anchors.verticalCenter: parent.verticalCenter
     }
 
